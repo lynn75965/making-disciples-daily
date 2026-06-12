@@ -1,0 +1,29 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+dist-ssr
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+
+# Netlify
+.netlify
+
+# Local env files (never commit secrets; MDD Supabase keys live here later)
+.env
+.env.local
+.env.*.local
+
+# Editor / OS
+.DS_Store
+*.local
+.vscode/*
+!.vscode/extensions.json
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*

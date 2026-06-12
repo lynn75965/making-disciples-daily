@@ -1,0 +1,22 @@
+// src/constants/prayerVisibility.ts
+// Making Disciples Daily -- SSOT: Prayer Visibility
+//
+// Owns the VALUES of the `visibility` enum (type imported from contracts.ts)
+// for prayer requests and messages (private / group / org), and the structural
+// child-safety rule.
+//
+// ARCHITECTURE PRINCIPLE #4 (care for people): adult-to-minor discipling
+// relationships are admin/guardian visible by DEFAULT -- never a private
+// adult-minor channel. This default is locked and encoded from commit one; the
+// RLS policies in Phase 1 must enforce it. When in doubt, default to MORE
+// oversight, not less.
+//
+// STUB STATE (Phase 0): visibility option values arrive in Phase 1; the
+// oversight default is set now.
+
+import type { Visibility } from './contracts';
+
+export const PRAYER_VISIBILITY_OPTIONS: readonly Visibility[] = [];
+
+// Locked safety default (Principle #4). Do not weaken without Lynn's review.
+export const ADULT_MINOR_REQUIRES_OVERSIGHT = true as const;

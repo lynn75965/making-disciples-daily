@@ -1,0 +1,12 @@
+// src/constants/questionTypes.ts
+// Making Disciples Daily -- SSOT: Question Types
+//
+// Owns the VALUES of the `question_type` enum (type imported from contracts.ts)
+// used by session builders and question banks (Phase 2). The DB enum mirrors
+// these exactly.
+//
+// STUB STATE (Phase 0): empty until Phase 2 populates the question types.
+
+import type { QuestionType } from './contracts';
+
+export const QUESTION_TYPES: readonly QuestionType[] = [];
