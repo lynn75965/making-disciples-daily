@@ -1,0 +1,7 @@
+# Making Disciples Daily -- line-ending normalization.
+# Source is committed with LF and UTF-8 without BOM so the ASCII guard and the
+# deploy pipeline see consistent bytes across machines.
+* text=auto eol=lf
+
+# Treat lockfiles and generated assets as-is.
+package-lock.json -text

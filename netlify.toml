@@ -1,0 +1,17 @@
+# Making Disciples Daily -- Netlify build + SPA config.
+# Netlify auto-deploys from main (locked decision #3). Never Vercel, never
+# Lovable Cloud. This file makes the build reproducible and gives the React 18
+# SPA the history fallback it needs so client-side routes resolve on reload.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# SPA fallback: serve index.html for any path so client routing works.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
