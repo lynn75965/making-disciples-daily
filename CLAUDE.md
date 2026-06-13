@@ -320,7 +320,13 @@ Categories: SSOT, FIX, FEATURE, REFACTOR, SECURITY, DOCS
 
 ## SUPABASE PROJECT
 
-URL: <fill at provisioning -- NEW project, never reuse the BLS project>
+Project name: making-disciples-daily   (NEW project -- NOT the BLS project)
+Project ref:  uprfupgiuruseobvhxce
+URL:          https://uprfupgiuruseobvhxce.supabase.co
+DB host:      db.uprfupgiuruseobvhxce.supabase.co
+Region:       us-east-2
+Provisioned:  June 13, 2026. Linked via `supabase link --project-ref uprfupgiuruseobvhxce`.
+DO NOT TOUCH the BLS project LessonSparkUSA (ref hphebzdftpjbiudpfcrs) -- separate data plane (Locked Decision #2).
 Edge Functions: supabase/functions/
 Shared utilities: supabase/functions/_shared/
 

@@ -143,6 +143,17 @@ function checkParticipantStrings(file, src, findings) {
 }
 
 // --- check 3: duplicated string-literal constants ---------------------------
+// Some tokens legitimately appear in more than one SSOT file because they belong
+// to DISTINCT domains that the architecture deliberately keeps separate (so they
+// must NOT import one another). These are not duplication to be deduped:
+//   'discipler' -- an authz Role value in accessControl.ts AND a participant
+//                  display-term key (ParticipantRole) in audienceConfig.ts.
+//                  CLAUDE.md lists Access Control and Audience as two SSOT files.
+// Keep this list as tight as possible; every entry needs a justification above.
+const CROSS_DOMAIN_LITERALS = new Set([
+  'discipler',
+]);
+
 function collectLiterals(file, src, registry) {
   if (/\.tsx$/.test(file)) return; // skip components (className noise)
   const code = stripComments(src);
@@ -159,6 +170,7 @@ function collectLiterals(file, src, registry) {
 
 function checkDuplicateLiterals(registry, findings) {
   Object.keys(registry).forEach(function (val) {
+    if (CROSS_DOMAIN_LITERALS.has(val)) return; // legitimate distinct-domain token
     const files = Array.from(registry[val]);
     if (files.length > 1) {
       findings.push({ rule: 'SSOT', file: files.join(', '), line: 0,

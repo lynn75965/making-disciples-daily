@@ -27,20 +27,48 @@ next planning conversation has current context.
 6. SECURITY POSTURE: roles in their own table (user_roles + has_role()); RLS
    references frontend enums; adult-to-minor discipling relationships are admin/
    guardian visible by default, never a private adult-minor channel.
+7. MINORS IN v1 (locked June 13, 2026): a minor uses org-admin visibility AND a
+   parent/guardian contact record (guardian_contacts table). Adult-to-minor
+   discipling must be visible to BOTH an org admin and the linked guardian.
+   Enforced structurally: a minor's relationship / prayer / journal MUST carry an
+   org_id (so an org admin always oversees) -- there is no private adult-minor
+   channel. CONFIRMED CONSEQUENCE (locked v1 behavior): a SOLO discipler with no
+   org CANNOT take on a minor in v1. A minor must be in an org. Shipped as
+   written in migration 20260613225603.
+8. GUARDIAN LOGIN DEFERRED (June 13, 2026): guardians get NO login accounts in
+   v1 -- oversight of adult-minor records is ORG-ADMIN-MEDIATED only. The
+   guardian_contacts record (name/email/relationship) is kept, and the
+   is_guardian_of() / guardian-read-by-email RLS path stays in the schema
+   (harmless with no guardian accounts, ready for later), but a guardian PORTAL /
+   login is explicitly a LATER PHASE pending the paid-model design. Do NOT treat
+   guardian login as an active v1 feature.
 
 ---
 
 ## CURRENT STATUS
 
-Phase 0 (governance scaffold) -- COMPLETE and deployed. The Vite + React 18 + TS
-+ Tailwind SPA is live on main, with the full governance toolchain (ASCII guard
-pre-commit hook, sync-constants, audit-ssot, deploy.ps1) and the SSOT skeleton
-(15 active files + 2 reserved-empty slots). Build clean, audit clean, ASCII
-clean. Pushed to origin/main (commit 2e6b3ff). Netlify auto-deploys from main.
-NOT YET wired to a live Supabase project (that is Phase 1).
+Phase 0 (governance scaffold) -- COMPLETE and deployed (commit 2e6b3ff).
 
-Next action for Claude Code: see WHAT'S NEXT -- Phase 1, item 6 (provision the
-NEW Supabase project and first migration set).
+Phase 1 items 6-7 (Supabase backend foundation) -- COMPLETE and APPLIED to the
+remote. The NEW Supabase project is provisioned and linked (ref
+uprfupgiuruseobvhxce, us-east-2). One atomic migration applied cleanly:
+supabase/migrations/20260613225603_initial_schema.sql -- 15 tables, 4 enums
+(role/visibility/commitment_status/prayer_status mirroring contracts.ts), RLS
+ENABLE on every table (NOT force -- so the SECURITY DEFINER helpers avoid policy
+recursion), authenticated-only grants (no anon), the four helper functions
+(has_role, is_org_admin, is_org_member, is_discipler_of) plus is_minor /
+is_guardian_of / can_oversee_minor, and 54 RLS policies with the locked
+minor-oversight rule encoded. Verified by `supabase migration list --linked`
+(version 20260613225603 recorded on both Local and Remote; migrations apply
+transactionally, so the recorded version means every statement committed).
+Phase-1 enum VALUES live in the SSOT (contracts.ts re-exports Role/Visibility;
+values derive from accessControl.ts / prayerVisibility.ts; commitment/prayer
+statuses owned in contracts.ts). Gates: sync-constants 11/11, audit-ssot 0
+findings, npm run build clean.
+
+Next action for Claude Code: WHAT'S NEXT item 8 (auth: email/password + reset,
+profiles, solo-discipler default). After Lynn's first signup, capture her
+auth.users UUID here (Rule #19).
 
 ---
 
@@ -97,14 +125,84 @@ NEW Supabase project and first migration set).
 
 - [RESOLVED June 12, 2026] GitHub repo slug confirmed: lynn75965/making-disciples-daily.
   Remote origin wired and Phase 0 pushed to main.
-- Admin auth.users UUID for the break-glass RLS policies (Rule #19) -- captured
-  after the first Supabase user is created.
-- Whether a parent/guardian contact record is needed on minors in v1, or whether
-  org-admin visibility alone satisfies the Phase-1 child-safety requirement.
+- Admin auth.users UUID for the break-glass RLS policies (Rule #19) -- STILL
+  PENDING: no Supabase user exists yet. The initial schema does NOT include the
+  hardcoded-UUID break-glass policies; platform-admin access currently runs
+  through has_role(auth.uid(), null, 'admin'). Capture Lynn's auth.users id after
+  her first signup and record it here; add break-glass policies only if/when
+  needed (Rule #19).
+- [RESOLVED June 13, 2026] Parent/guardian record on minors -- YES (Locked
+  Decision #7). guardian_contacts table added; org-admin AND guardian oversight
+  both enforced in RLS. See FLAG FOR LYNN in the June 13 session log for the
+  solo-discipler-cannot-take-a-minor consequence to confirm.
+- [RESOLVED June 13, 2026] Guardian portal access: DEFERRED to a later phase
+  (Locked Decision #8). No guardian login accounts in v1; oversight is
+  org-admin-mediated. is_guardian_of() stays in the schema, dormant until
+  guardians get accounts. Enum values for role/commitment_status/prayer_status/
+  visibility APPROVED as proposed and shipped in migration 20260613225603.
 
 ---
 
 ## SESSION LOG
+
+### June 13, 2026 -- Phase 1 items 6-7: Supabase backend foundation (Claude Code, session 2)
+- Ran /audit-ssot first (Rule #15): CLEAN (0 findings) before any change.
+- PROVISIONED + LINKED the NEW Supabase project. Lynn had already created it in
+  the dashboard. CLI was authenticated; confirmed the right one: name
+  "making-disciples-daily", ref uprfupgiuruseobvhxce, us-east-2, created
+  2026-06-13. Verified SEPARATE from BLS (LessonSparkUSA, ref hphebzdftpjbiudpfcrs)
+  -- Locked Decision #2 honored. `supabase init` + `supabase link --project-ref
+  uprfupgiuruseobvhxce`. Confirmed empty: `supabase migration list --linked`
+  shows no remote migrations. Recorded ref in CLAUDE.md SUPABASE PROJECT block.
+- DEFINED Phase-1 enum VALUES in the SSOT (had been empty `never` stubs):
+  role = admin/org_admin/org_member/discipler (accessControl.ts);
+  visibility = private/group/org (prayerVisibility.ts);
+  commitment_status = open/completed/missed/cancelled (contracts.ts);
+  prayer_status = active/answered/archived (contracts.ts).
+  Refactored so each literal has ONE source: value arrays are `as const`, types
+  DERIVED via typeof[number]; contracts.ts re-exports Role/Visibility as the
+  import surface. Phase-2 enums (growth_sign, question_type, apprentice_stage,
+  group_type) intentionally left `never` -- no DB enum created for them yet
+  (a Postgres enum needs >= 1 label; "mirror exactly" = empty here, absent in SQL).
+- WROTE one atomic migration: supabase/migrations/20260613225603_initial_schema.sql
+  -- 15 tables (profiles w/ is_minor, guardian_contacts, organizations,
+  org_members [no role col, Rule #18], user_roles [roles live here only],
+  invitations, relationships, groups, group_members, sessions, commitments,
+  prayer_requests [visibility+status], journal_entries, notifications,
+  activity_logs); 4 enums; RLS ENABLE + FORCE on all; revoke from anon + grant
+  select/insert/update/delete to authenticated. Helper SECURITY DEFINER funcs
+  created BEFORE policies (Rule #18): has_role, is_org_admin, is_org_member,
+  is_discipler_of, plus is_minor / is_guardian_of / can_oversee_minor for the
+  child-safety rule. Full RLS policy set. user_roles INSERT policy blocks
+  self-escalation (a user may only self-grant the solo 'discipler' default).
+- MINOR-OVERSIGHT (Locked Decision #7 / Principle #4) encoded in RLS:
+  relationships/prayer_requests/journal_entries WITH CHECK require org_id when a
+  minor is involved (so an org admin always oversees); SELECT policies grant the
+  org admin AND linked guardian read access regardless of 'private' visibility.
+- DECISIONS SETTLED BY LYNN (this session): (a) minors require an org -- ship as
+  written; a solo discipler with no org cannot disciple a minor in v1 (Locked
+  Decision #7). (b) guardians get no login in v1; org-admin-mediated oversight
+  only; guardian portal deferred (Locked Decision #8). (c) enum values approved
+  exactly as proposed. No migration changes were needed.
+- Updated scripts/audit-ssot.cjs: added a tight, documented CROSS_DOMAIN_LITERALS
+  allowlist for 'discipler' (an authz Role value AND an audienceConfig
+  ParticipantRole key -- two distinct SSOTs by design, must not import each
+  other). This is a governance-tool tweak (same class as the Phase-0 heuristic
+  tightening); noted here for transparency.
+- GATES: sync-constants 11/11; audit-ssot 0 findings; npm run build clean.
+- PUSHED: `npx supabase db push --linked` applied 20260613225603 cleanly (only a
+  harmless NOTICE that pgcrypto already existed). The CLI connected via a
+  temporary login role provisioned from the access token -- no DB password was
+  needed or entered. Verified with `supabase migration list --linked`: version
+  20260613225603 on both Local and Remote. (Object-by-object `supabase db dump`
+  was unavailable -- it requires Docker, not installed -- but the transactional
+  apply + recorded version confirms all 4 enums, 15 tables, RLS, 7 functions, and
+  54 policies committed.)
+- COMMITTED via deploy.ps1 "FEATURE: Phase 1 initial Supabase schema + RLS".
+- CARRY-FORWARD: (1) Capture Lynn's auth.users UUID after her first signup
+  (Rule #19) -- the only remaining backend-foundation open item. (2) WHAT'S NEXT
+  item 8 (auth + profiles + solo-discipler default). (3) Guardian portal/login
+  is a deferred later-phase feature (Locked Decision #8) -- do not build in v1.
 
 ### June 12, 2026 -- Phase 0 scaffold built + deployed (Claude Code, session 1)
 - Initialized git on a single main branch. NOTE: no TanStack Start scaffold was
@@ -153,4 +251,4 @@ NEW Supabase project and first migration set).
   deploy.ps1, scripts/sync-constants.cjs, scripts/ascii-guard.cjs.
 - Locked the two open build decisions: Path A (Vite SPA) and a NEW Supabase
   project.
-- CARRY-FORWARD: none yet. First Claude Code session starts at WHAT'S NEXT item 1.
+- CARRY-FORWARD:deploy.ps1 branch guard cannot create the first commit on an unborn branch (zero-commit repo). Worked around manually for MDD. Before the first white-label tenant provision, harden the branch check to handle the unborn-branch case — Claude Code offered the fix; it's a standalone governance-artifact commit.

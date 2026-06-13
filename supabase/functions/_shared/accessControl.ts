@@ -5,16 +5,31 @@
 // src/constants/accessControl.ts
 // Making Disciples Daily -- SSOT: Access Control / Roles
 //
-// Owns the VALUES of the `role` enum (type imported from contracts.ts) and the
-// access-control matrix. RLS policies reference these frontend values; they are
-// never read from a config table (Architecture Principle #2).
+// OWNS the `role` enum: ROLES is the single literal source and the Role type is
+// DERIVED from it; contracts.ts re-exports Role as the import surface. RLS
+// policies reference these frontend values; they are never read from a config
+// table (Architecture Principle #2).
 //
 // RULE #18: roles live in their own DB table (user_roles) powered by a
 // has_role() SECURITY DEFINER function -- never a role column on profiles or
 // org_members. That is enforced at the DB layer in Phase 1.
 //
-// STUB STATE (Phase 0): empty until Phase 1 defines the role set.
+// PHASE 1 role set (mirrors the public.role Postgres enum exactly):
+//   admin       -- platform super-admin (Lynn). Break-glass per Rule #19; the
+//                  future has_role(auth.uid(), null, 'admin') path uses this.
+//                  Always org_id = NULL in user_roles.
+//   org_admin   -- organization administrator: issues invites, holds oversight
+//                  of adult-minor relationships in the org (Principle #4).
+//   org_member  -- org-affiliated discipler (non-admin).
+//   discipler   -- solo discipler. DEFAULT for a new signup; org_id = NULL.
+//
+// NOT YET a role (added in its phase): apprentice (Phase 2 apprentice mode).
 
-import type { Role } from './contracts';
+export const ROLES = [
+  'admin',
+  'org_admin',
+  'org_member',
+  'discipler',
+] as const;
 
-export const ROLES: readonly Role[] = [];
+export type Role = (typeof ROLES)[number];
